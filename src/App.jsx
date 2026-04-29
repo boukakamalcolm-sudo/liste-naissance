@@ -179,16 +179,16 @@ export default function ListeNaissance() {
           pointerEvents: "none",
         }}>
           {/* Confetti */}
-          {[...Array(40)].map((_, i) => (
+          {[...Array(150)].map((_, i) => (
             <div key={i} style={{
               position: "absolute",
               left: `${Math.random() * 100}%`,
               top: `-10px`,
-              width: `${6 + Math.random() * 8}px`,
-              height: `${6 + Math.random() * 8}px`,
+              width: `${5 + Math.random() * 12}px`,
+              height: `${5 + Math.random() * 14}px`,
               borderRadius: Math.random() > 0.5 ? "50%" : "2px",
               background: ["#f472a8","#a78bfa","#60a5fa","#34d399","#fbbf24","#f9a8c9","#818cf8"][Math.floor(Math.random() * 7)],
-              animation: `confettiFall ${1.5 + Math.random() * 2.5}s ease-in ${Math.random() * 0.8}s forwards`,
+              animation: `confettiFall ${1 + Math.random() * 2}s ease-in ${Math.random() * 1.2}s forwards`,
               transform: `rotate(${Math.random() * 360}deg)`,
             }} />
           ))}
