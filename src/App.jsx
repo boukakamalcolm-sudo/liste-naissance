@@ -33,6 +33,8 @@ export default function ListeNaissance() {
   const [sortBy, setSortBy] = useState("default");
   const [loading, setLoading] = useState(true);
   const [celebration, setCelebration] = useState(null);
+  const [animatedProgress, setAnimatedProgress] = useState(0);
+  const [animatedReserved, setAnimatedReserved] = useState(0);
 
   useEffect(() => {
     const unsub = onSnapshot(DB_REF(), (snap) => {
@@ -151,6 +153,24 @@ export default function ListeNaissance() {
     if (sortBy === "price-desc") filtered.sort((a, b) => parseFloat(b.price) - parseFloat(a.price));
     return filtered;
   };
+
+  useEffect(() => {
+    if (total === 0) return;
+    setAnimatedProgress(0);
+    setAnimatedReserved(0);
+    const duration = 1200;
+    const steps = 60;
+    const interval = duration / steps;
+    let step = 0;
+    const timer = setInterval(() => {
+      step++;
+      const ease = 1 - Math.pow(1 - step / steps, 3);
+      setAnimatedProgress(Math.round(progress * ease));
+      setAnimatedReserved(Math.round(reserved * ease));
+      if (step >= steps) clearInterval(timer);
+    }, interval);
+    return () => clearInterval(timer);
+  }, [loading]);
 
   const inputStyle = { width: "100%", boxSizing: "border-box", padding: "11px 14px", border: "1.5px solid #e5e7eb", borderRadius: 10, fontSize: 14, fontFamily: "'DM Sans', sans-serif", background: "white" };
 
@@ -284,15 +304,17 @@ export default function ListeNaissance() {
             <span style={{ color: "#60a5fa", fontWeight: 700 }}>Nicolas</span>
           </p>
           {total > 0 && (
-            <div style={{ maxWidth: 320, margin: "0 auto 16px" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, color: "#aaa", marginBottom: 6 }}>
-                <span style={{ color: "#60a5fa", fontWeight: 600 }}>{reserved} article{reserved > 1 ? "s" : ""} déjà offert{reserved > 1 ? "s" : ""} 💙</span>
-                <span>{progress}%</span>
+            <div style={{ maxWidth: 340, margin: "0 auto 16px" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 8 }}>
+                <span style={{ color: "#60a5fa", fontWeight: 700, fontSize: 15 }}>
+                  {animatedReserved} article{animatedReserved > 1 ? "s" : ""} déjà offert{animatedReserved > 1 ? "s" : ""} 💙
+                </span>
+                <span style={{ fontSize: 18, fontWeight: 800, color: "#a78bfa" }}>{animatedProgress}%</span>
               </div>
-              <div style={{ height: 6, background: "#f0f4f8", borderRadius: 100, overflow: "hidden" }}>
-                <div style={{ height: "100%", width: `${progress}%`, background: "linear-gradient(90deg, #f9a8c9, #60a5fa)", borderRadius: 100, transition: "width 0.6s ease" }} />
+              <div style={{ height: 8, background: "#f0f4f8", borderRadius: 100, overflow: "hidden" }}>
+                <div style={{ height: "100%", width: `${animatedProgress}%`, background: "linear-gradient(90deg, #f9a8c9, #a78bfa, #60a5fa)", borderRadius: 100, transition: "width 0.05s linear" }} />
               </div>
-              <div style={{ fontSize: 11, color: "#ccc", marginTop: 4 }}>{total - reserved} article{(total - reserved) > 1 ? "s" : ""} encore disponible{(total - reserved) > 1 ? "s" : ""}</div>
+              <div style={{ fontSize: 12, color: "#ccc", marginTop: 5 }}>{total - reserved} article{(total - reserved) > 1 ? "s" : ""} encore disponible{(total - reserved) > 1 ? "s" : ""}</div>
             </div>
           )}
           <button onClick={handleCopy} style={{ background: "none", border: "1.5px solid #e5e7eb", borderRadius: 100, padding: "6px 16px", fontSize: 12, fontWeight: 600, color: "#888", cursor: "pointer", fontFamily: "'DM Sans', sans-serif", transition: "all 0.2s" }}>
@@ -379,6 +401,13 @@ export default function ListeNaissance() {
             )}
           </div>
         )}
+      </div>
+
+      {/* Footer */}
+      <div style={{ textAlign: "center", padding: "24px 0 32px", fontFamily: "'Cormorant Garamond', serif" }}>
+        <span style={{ fontSize: 13, color: "#d1d5db", fontStyle: "italic", letterSpacing: "0.05em" }}>
+          une app faite avec 💙 par Malcolm
+        </span>
       </div>
     </div>
   );
