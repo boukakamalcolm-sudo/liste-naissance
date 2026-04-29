@@ -27,12 +27,8 @@ export default function ListeNaissance() {
   const [cancelName, setCancelName] = useState("");
   const [cancelError, setCancelError] = useState(false);
   const [addForm, setAddForm] = useState({ url: "", title: "", description: "", price: "", category: "Autre" });
-  const [previewing, setPreviewing] = useState(false);
-  const [previewData, setPreviewData] = useState(null);
-  const [previewError, setPreviewError] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
   const [deleteConfirm, setDeleteConfirm] = useState(null);
-  const [sortBy, setSortBy] = useState("default");
   const [copied, setCopied] = useState(false);
   const [loading, setLoading] = useState(true);
 
@@ -84,7 +80,7 @@ export default function ListeNaissance() {
     const newCats = [...categories, trimmed];
     await updateDB({ categories: newCats });
     setNewCategory("");
-    showSuccess(`Catégorie "${trimmed}" ajoutée ✓`);
+    showSuccess("Catégorie ajoutée ✓");
   };
 
   const handleDeleteCategory = async (cat) => {
@@ -93,36 +89,20 @@ export default function ListeNaissance() {
     showSuccess("Catégorie supprimée ✓");
   };
 
-  const fetchPreview = async () => {
-    if (!addForm.url) return;
-    setPreviewing(true); setPreviewError(false); setPreviewData(null);
-    try {
-      const res = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(addForm.url)}`);
-      const data = await res.json();
-      const parser = new DOMParser();
-      const doc2 = parser.parseFromString(data.contents, "text/html");
-      const title = doc2.querySelector('meta[property="og:title"]')?.content || doc2.querySelector("title")?.textContent || "";
-      const description = doc2.querySelector('meta[property="og:description"]')?.content || doc2.querySelector('meta[name="description"]')?.content || "";
-      const image = doc2.querySelector('meta[property="og:image"]')?.content || "";
-      const siteName = doc2.querySelector('meta[property="og:site_name"]')?.content || new URL(addForm.url).hostname.replace("www.", "") || "";
-      setPreviewData({ title, description, image, siteName });
-      setAddForm(f => ({ ...f, title: f.title || title, description: f.description || description }));
-    } catch { setPreviewError(true); }
-    setPreviewing(false);
-  };
-
   const handleAddItem = async () => {
-    if (!addForm.url || !addForm.title) return;
+    if (!addForm.title) return;
     const newItem = {
-      id: Date.now().toString(), url: addForm.url, title: addForm.title,
-      description: addForm.description, price: addForm.price, category: addForm.category,
-      image: previewData?.image || "",
-      siteName: previewData?.siteName || new URL(addForm.url).hostname.replace("www.", ""),
-      reservedBy: null, createdAt: Date.now(),
+      id: Date.now().toString(),
+      url: addForm.url,
+      title: addForm.title,
+      description: addForm.description,
+      price: addForm.price,
+      category: addForm.category,
+      reservedBy: null,
+      createdAt: Date.now(),
     };
     await saveItems([newItem, ...items]);
     setAddForm({ url: "", title: "", description: "", price: "", category: "Autre" });
-    setPreviewData(null);
     showSuccess("Article ajouté ✓");
   };
 
@@ -130,7 +110,7 @@ export default function ListeNaissance() {
     if (!reserveName.trim()) return;
     await saveItems(items.map(item => item.id === reserveModal ? { ...item, reservedBy: reserveName.trim() } : item));
     setReserveModal(null); setReserveName("");
-    showSuccess(`Réservé par ${reserveName} ✓`);
+    showSuccess("Réservé ✓");
   };
 
   const handleCancelAttempt = async () => {
@@ -157,17 +137,9 @@ export default function ListeNaissance() {
     navigator.clipboard.writeText(window.location.href).then(() => { setCopied(true); setTimeout(() => setCopied(false), 2500); });
   };
 
-  const getFilteredItems = () => {
-    let filtered = [...items];
-    if (sortBy === "price-asc") filtered.sort((a, b) => parseFloat(a.price) - parseFloat(b.price));
-    if (sortBy === "price-desc") filtered.sort((a, b) => parseFloat(b.price) - parseFloat(a.price));
-    return filtered;
-  };
-
   const total = items.length;
   const reserved = items.filter(i => i.reservedBy).length;
   const progress = total > 0 ? Math.round((reserved / total) * 100) : 0;
-  const filteredItems = getFilteredItems();
 
   const inputStyle = { width: "100%", boxSizing: "border-box", padding: "11px 14px", border: "1.5px solid #e5e7eb", borderRadius: 10, fontSize: 14, fontFamily: "'DM Sans', sans-serif", background: "white" };
 
@@ -185,10 +157,6 @@ export default function ListeNaissance() {
         .btn-blue { background: linear-gradient(135deg, #93c5fd, #60a5fa); color: white; border: none; cursor: pointer; transition: all 0.2s; }
         .btn-blue:hover { opacity: 0.88; transform: scale(1.02); }
         input:focus, textarea:focus, select:focus { outline: none !important; border-color: #f9a8c9 !important; box-shadow: 0 0 0 3px rgba(249,168,201,0.2) !important; }
-        .filter-btn { border: 1.5px solid #e5e7eb; background: white; cursor: pointer; border-radius: 100px; padding: 6px 14px; font-size: 13px; font-weight: 500; transition: all 0.15s; font-family: "DM Sans", sans-serif; color: #666; }
-        .filter-btn:hover { border-color: #f9a8c9; color: #f472a8; }
-        .filter-btn.active { background: linear-gradient(135deg, #fdf2f8, #fce7f3); border-color: #f9a8c9; color: #f472a8; }
-
       `}</style>
 
       {successMessage && (
@@ -215,10 +183,9 @@ export default function ListeNaissance() {
           <div style={{ background: "white", borderRadius: 20, padding: 32, maxWidth: 400, width: "100%", animation: "popIn 0.2s ease", boxShadow: "0 20px 60px rgba(0,0,0,0.15)" }} onClick={e => e.stopPropagation()}>
             <div style={{ fontSize: 28, marginBottom: 8 }}>↩️</div>
             <h3 style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 24, fontWeight: 600, margin: "0 0 6px" }}>Annuler ma réservation</h3>
-            <p style={{ fontSize: 13, color: "#888", margin: "0 0 6px" }}>{items.find(i => i.id === cancelModal)?.title}</p>
-            <p style={{ fontSize: 13, color: "#aaa", margin: "0 0 16px" }}>Entre ton prénom pour confirmer.</p>
+            <p style={{ fontSize: 13, color: "#888", margin: "0 0 16px" }}>Entre ton prénom pour confirmer.</p>
             <input type="text" placeholder="Ton prénom..." value={cancelName} onChange={e => setCancelName(e.target.value)} onKeyDown={e => e.key === "Enter" && handleCancelAttempt()} autoFocus
-              style={{ ...inputStyle, marginBottom: 8, border: `1.5px solid ${cancelError ? "#fca5a5" : "#e5e7eb"}`, background: cancelError ? "#fef2f2" : "white", animation: cancelError ? "shake 0.3s ease" : "none" }} />
+              style={{ ...inputStyle, marginBottom: 8, border: cancelError ? "1.5px solid #fca5a5" : "1.5px solid #e5e7eb", background: cancelError ? "#fef2f2" : "white", animation: cancelError ? "shake 0.3s ease" : "none" }} />
             {cancelError && <p style={{ color: "#ef4444", fontSize: 12, margin: "0 0 12px" }}>Prénom incorrect</p>}
             <div style={{ display: "flex", gap: 10, marginTop: 8 }}>
               <button onClick={() => { setCancelModal(null); setCancelName(""); setCancelError(false); }} style={{ flex: 1, padding: "12px", border: "1.5px solid #e5e7eb", borderRadius: 10, background: "white", cursor: "pointer", fontSize: 14 }}>Retour</button>
@@ -283,23 +250,16 @@ export default function ListeNaissance() {
       <div style={{ maxWidth: 720, margin: "0 auto", padding: "24px 24px 60px" }}>
         {view === "list" && (
           <div style={{ animation: "fadeIn 0.4s ease" }}>
-            <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 16 }}>
-              <select value={sortBy} onChange={e => setSortBy(e.target.value)} style={{ border: "1.5px solid #e5e7eb", borderRadius: 10, padding: "7px 12px", fontSize: 13, fontFamily: "'DM Sans', sans-serif", color: "#666", background: "white", cursor: "pointer" }}>
-                <option value="default">Ordre par défaut</option>
-                <option value="price-asc">Prix croissant ↑</option>
-                <option value="price-desc">Prix décroissant ↓</option>
-              </select>
-            </div>
             {loading ? (
               <div style={{ textAlign: "center", padding: "60px", color: "#ccc" }}>Chargement…</div>
-            ) : filteredItems.length === 0 ? (
+            ) : items.length === 0 ? (
               <div style={{ textAlign: "center", padding: "60px 20px", color: "#ccc" }}>
                 <div style={{ fontSize: 40, marginBottom: 12 }}>🎁</div>
-                <p style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 20 }}>Aucun article trouvé</p>
+                <p style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 20 }}>La liste est encore vide…</p>
               </div>
             ) : (
               <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-                {filteredItems.map((item, i) => (
+                {items.map((item, i) => (
                   <ItemCard key={item.id} item={item} index={i}
                     reserved={!!item.reservedBy}
                     onReserve={() => setReserveModal(item.id)}
@@ -318,7 +278,7 @@ export default function ListeNaissance() {
                 <div style={{ fontSize: 32, marginBottom: 12 }}>🔐</div>
                 <h3 style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 24, fontWeight: 600, margin: "0 0 20px" }}>Espace Cécilia & Nicolas</h3>
                 <input type="password" placeholder="Mot de passe..." value={adminPassword} onChange={e => setAdminPassword(e.target.value)} onKeyDown={e => e.key === "Enter" && handleAdminLogin()}
-                  style={{ ...inputStyle, marginBottom: 12, border: `1.5px solid ${adminError ? "#fca5a5" : "#e5e7eb"}`, animation: adminError ? "shake 0.3s ease" : "none", background: adminError ? "#fef2f2" : "white" }} />
+                  style={{ ...inputStyle, marginBottom: 12, border: adminError ? "1.5px solid #fca5a5" : "1.5px solid #e5e7eb", animation: adminError ? "shake 0.3s ease" : "none", background: adminError ? "#fef2f2" : "white" }} />
                 {adminError && <p style={{ color: "#ef4444", fontSize: 13, margin: "0 0 12px" }}>Mot de passe incorrect</p>}
                 <button className="btn-rose" onClick={handleAdminLogin} style={{ width: "100%", padding: "12px", borderRadius: 10, fontSize: 15, fontWeight: 600 }}>Accéder</button>
               </div>
@@ -326,21 +286,7 @@ export default function ListeNaissance() {
               <div>
                 <div style={{ background: "#fafafa", borderRadius: 16, padding: 24, marginBottom: 24, border: "1px solid #f3f4f6" }}>
                   <h3 style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 22, fontWeight: 600, margin: "0 0 20px" }}>Ajouter un article</h3>
-                  <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
-                    <input type="url" placeholder="https://..." value={addForm.url} onChange={e => setAddForm(f => ({ ...f, url: e.target.value }))} style={{ ...inputStyle, flex: 1 }} />
-                    <button className="btn-blue" onClick={fetchPreview} disabled={!addForm.url || previewing} style={{ padding: "11px 16px", borderRadius: 10, fontSize: 13, fontWeight: 600, whiteSpace: "nowrap", opacity: addForm.url ? 1 : 0.5 }}>{previewing ? "..." : "Prévisualiser"}</button>
-                  </div>
-                  {previewData && (
-                    <div style={{ display: "flex", gap: 12, background: "white", borderRadius: 12, padding: 12, marginBottom: 12, border: "1.5px solid #e5e7eb", animation: "fadeIn 0.3s ease" }}>
-                      {previewData.image && <img src={previewData.image} alt="" style={{ width: 64, height: 64, borderRadius: 8, objectFit: "cover", flexShrink: 0 }} onError={e => e.target.style.display = "none"} />}
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontSize: 11, color: "#60a5fa", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 2 }}>{previewData.siteName}</div>
-                        <div style={{ fontSize: 14, fontWeight: 600, color: "#1a1a1a", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{previewData.title}</div>
-                        <div style={{ fontSize: 12, color: "#888", overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" }}>{previewData.description}</div>
-                      </div>
-                    </div>
-                  )}
-                  {previewError && <p style={{ fontSize: 12, color: "#f97316", marginBottom: 12 }}>⚠️ Prévisualisation impossible — remplis manuellement</p>}
+                  <input type="url" placeholder="Lien (optionnel)" value={addForm.url} onChange={e => setAddForm(f => ({ ...f, url: e.target.value }))} style={{ ...inputStyle, marginBottom: 8 }} />
                   <input type="text" placeholder="Titre *" value={addForm.title} onChange={e => setAddForm(f => ({ ...f, title: e.target.value }))} style={{ ...inputStyle, marginBottom: 8 }} />
                   <textarea placeholder="Description (optionnel)" value={addForm.description} onChange={e => setAddForm(f => ({ ...f, description: e.target.value }))} rows={2} style={{ ...inputStyle, marginBottom: 8, resize: "none" }} />
                   <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
@@ -349,12 +295,12 @@ export default function ListeNaissance() {
                       {categories.map(c => <option key={c}>{c}</option>)}
                     </select>
                   </div>
-                  <button className="btn-rose" onClick={handleAddItem} disabled={!addForm.url || !addForm.title} style={{ width: "100%", padding: "13px", borderRadius: 10, fontSize: 15, fontWeight: 600, opacity: addForm.url && addForm.title ? 1 : 0.5 }}>+ Ajouter à la liste</button>
+                  <button className="btn-rose" onClick={handleAddItem} disabled={!addForm.title} style={{ width: "100%", padding: "13px", borderRadius: 10, fontSize: 15, fontWeight: 600, opacity: addForm.title ? 1 : 0.5 }}>+ Ajouter à la liste</button>
                 </div>
 
                 <div style={{ background: "#fafafa", borderRadius: 16, padding: 24, marginBottom: 24, border: "1px solid #f3f4f6" }}>
-                  <h3 style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 20, fontWeight: 600, margin: "0 0 6px" }}>🏷️ Catégories personnalisables</h3>
-                  <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 14 }}>
+                  <h3 style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 20, fontWeight: 600, margin: "0 0 6px" }}>🏷️ Catégories</h3>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 14, marginTop: 14 }}>
                     {categories.map(cat => (
                       <div key={cat} style={{ display: "flex", alignItems: "center", gap: 4, background: "linear-gradient(135deg, #fdf2f8, #fce7f3)", border: "1.5px solid #f9a8c9", borderRadius: 100, padding: "4px 12px" }}>
                         <span style={{ fontSize: 13, fontWeight: 600, color: "#f472a8" }}>{cat}</span>
@@ -377,7 +323,7 @@ export default function ListeNaissance() {
                 </div>
 
                 <h3 style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 20, fontWeight: 600, margin: "0 0 16px" }}>Gérer les articles ({items.length})</h3>
-                {items.length === 0 && <p style={{ color: "#ccc", fontSize: 14 }}>Aucun article pour l'instant.</p>}
+                {items.length === 0 && <p style={{ color: "#ccc", fontSize: 14 }}>Aucun article pour l instant.</p>}
                 <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                   {items.map((item, i) => (
                     <ItemCard key={item.id} item={item} index={i} reserved={!!item.reservedBy} adminUnlocked
@@ -396,32 +342,49 @@ export default function ListeNaissance() {
 
 function ItemCard({ item, index, reserved, onReserve, onCancel, adminUnlocked, onUnreserve, onDelete }) {
   return (
-    <div className="card" style={{ background: "white", borderRadius: 16, border: `1.5px solid ${reserved ? "#e0f0ff" : "#f9e8f3"}`, overflow: "hidden", display: "flex", animation: `fadeIn 0.4s ease ${index * 0.04}s both`, opacity: reserved ? 0.82 : 1, boxShadow: "0 2px 12px rgba(0,0,0,0.04)", transition: "box-shadow 0.2s, transform 0.2s" }}>
-      <div style={{ width: 4, flexShrink: 0, background: reserved ? "linear-gradient(180deg, #93c5fd, #60a5fa)" : "linear-gradient(180deg, #f9a8c9, #f472a8)" }} />
-      {item.image && <img src={item.image} alt="" style={{ width: 80, height: 80, objectFit: "cover", flexShrink: 0, alignSelf: "center", margin: "0 4px" }} onError={e => e.target.style.display = "none"} />}
-      <div style={{ flex: 1, padding: "14px 16px", minWidth: 0 }}>
+    <div className="card" style={{
+      background: reserved ? "#eff6ff" : "white",
+      borderRadius: 16,
+      border: reserved ? "2px solid #93c5fd" : "1.5px solid #f9e8f3",
+      overflow: "hidden", display: "flex",
+      animation: `fadeIn 0.4s ease ${index * 0.04}s both`,
+      boxShadow: reserved ? "0 4px 16px rgba(96,165,250,0.15)" : "0 2px 12px rgba(0,0,0,0.04)",
+      transition: "box-shadow 0.2s, transform 0.2s",
+    }}>
+      <div style={{ width: 5, flexShrink: 0, background: reserved ? "linear-gradient(180deg, #93c5fd, #60a5fa)" : "linear-gradient(180deg, #f9a8c9, #f472a8)" }} />
+      <div style={{ flex: 1, padding: "16px 16px", minWidth: 0 }}>
         <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 8 }}>
           <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 2 }}>
-              {item.siteName && <span style={{ fontSize: 11, color: "#60a5fa", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em" }}>{item.siteName}</span>}
-              {item.category && item.category !== "Autre" && <span style={{ fontSize: 10, background: "#f9e8f3", color: "#f472a8", padding: "1px 8px", borderRadius: 100, fontWeight: 600 }}>{item.category}</span>}
+            <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 4 }}>
+              {item.category && item.category !== "Autre" && <span style={{ fontSize: 11, background: reserved ? "#dbeafe" : "#f9e8f3", color: reserved ? "#3b82f6" : "#f472a8", padding: "2px 10px", borderRadius: 100, fontWeight: 600 }}>{item.category}</span>}
+              {reserved && (
+                <span style={{ fontSize: 12, background: "#3b82f6", color: "white", padding: "3px 12px", borderRadius: 100, fontWeight: 700, letterSpacing: "0.02em" }}>
+                  ✓ Déjà réservé
+                </span>
+              )}
             </div>
-            <div style={{ fontSize: 15, fontWeight: 700, color: "#1a1a1a", marginBottom: 4, lineHeight: 1.3 }}>{item.title}</div>
-            {item.description && <div style={{ fontSize: 13, color: "#888", lineHeight: 1.4, marginBottom: 6, overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" }}>{item.description}</div>}
-            <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", marginBottom: 8 }}>
-              {item.price && <span style={{ fontSize: 14, fontWeight: 700, color: reserved ? "#60a5fa" : "#f472a8" }}>{item.price}</span>}
-              {reserved && <span style={{ fontSize: 12, background: "#eff6ff", color: "#60a5fa", padding: "2px 10px", borderRadius: 100, fontWeight: 600 }}>💙 Pris par {item.reservedBy}</span>}
+            <div style={{ fontSize: 16, fontWeight: 700, color: reserved ? "#1e40af" : "#1a1a1a", marginBottom: 4, lineHeight: 1.3 }}>{item.title}</div>
+            {item.description && <div style={{ fontSize: 13, color: "#888", lineHeight: 1.4, marginBottom: 6 }}>{item.description}</div>}
+            <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", marginBottom: 8 }}>
+              {item.price && <span style={{ fontSize: 15, fontWeight: 700, color: reserved ? "#3b82f6" : "#f472a8" }}>{item.price}</span>}
+              {reserved && <span style={{ fontSize: 13, color: "#60a5fa", fontWeight: 600 }}>Pris par {item.reservedBy}</span>}
             </div>
-            <a href={item.url} target="_blank" rel="noopener noreferrer" style={{ textDecoration: "none" }}>
-              <span style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 12, fontWeight: 600, color: reserved ? "#60a5fa" : "#f472a8", border: `1.5px solid ${reserved ? "#bfdbfe" : "#f9a8c9"}`, padding: "5px 12px", borderRadius: 8, transition: "all 0.15s" }}>🔗 Voir l'article →</span>
-            </a>
+            {item.url && (
+              <a href={item.url} target="_blank" rel="noopener noreferrer" style={{ textDecoration: "none" }}>
+                <span style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 12, fontWeight: 600, color: reserved ? "#60a5fa" : "#f472a8", border: reserved ? "1.5px solid #bfdbfe" : "1.5px solid #f9a8c9", padding: "5px 12px", borderRadius: 8 }}>🔗 Voir l article →</span>
+              </a>
+            )}
             {reserved && !adminUnlocked && (
-              <button onClick={onCancel} style={{ background: "none", border: "none", cursor: "pointer", fontSize: 11, color: "#ccc", marginTop: 6, display: "block", padding: 0, fontFamily: "'DM Sans', sans-serif" }}>J'ai fait une erreur ↩</button>
+              <button onClick={onCancel} style={{ background: "none", border: "none", cursor: "pointer", fontSize: 11, color: "#93c5fd", marginTop: 8, display: "block", padding: 0, fontFamily: "'DM Sans', sans-serif" }}>
+                J ai fait une erreur ↩
+              </button>
             )}
           </div>
           <div style={{ display: "flex", flexDirection: "column", gap: 6, flexShrink: 0 }}>
             {!reserved && !adminUnlocked && (
-              <button onClick={onReserve} style={{ padding: "7px 14px", borderRadius: 100, fontSize: 12, fontWeight: 600, background: "linear-gradient(135deg, #fdf2f8, #fce7f3)", border: "1.5px solid #f9a8c9", color: "#f472a8", cursor: "pointer", whiteSpace: "nowrap", transition: "all 0.15s" }}>Je prends 💕</button>
+              <button onClick={onReserve} style={{ padding: "9px 16px", borderRadius: 100, fontSize: 13, fontWeight: 700, background: "linear-gradient(135deg, #f9a8c9, #f472a8)", border: "none", color: "white", cursor: "pointer", whiteSpace: "nowrap", boxShadow: "0 3px 10px rgba(244,114,168,0.35)" }}>
+                Je prends 💕
+              </button>
             )}
             {adminUnlocked && (
               <>
