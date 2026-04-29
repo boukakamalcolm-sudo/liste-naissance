@@ -338,6 +338,7 @@ export default function ListeNaissance() {
               <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
                 {filteredItems.map((item, i) => (
                   <ItemCard key={item.id} item={item} index={i}
+                    reserved={!!item.reservedBy}
                     onReserve={() => setReserveModal(item.id)}
                     onCancel={() => { setCancelModal(item.id); setCancelName(""); }}
                     adminUnlocked={false} />
