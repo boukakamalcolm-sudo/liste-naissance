@@ -30,6 +30,7 @@ export default function ListeNaissance() {
   const [successMessage, setSuccessMessage] = useState("");
   const [deleteConfirm, setDeleteConfirm] = useState(null);
   const [copied, setCopied] = useState(false);
+  const [sortBy, setSortBy] = useState("default");
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -141,6 +142,13 @@ export default function ListeNaissance() {
   const reserved = items.filter(i => i.reservedBy).length;
   const progress = total > 0 ? Math.round((reserved / total) * 100) : 0;
 
+  const getFilteredItems = () => {
+    let filtered = [...items];
+    if (sortBy === "price-asc") filtered.sort((a, b) => parseFloat(a.price) - parseFloat(b.price));
+    if (sortBy === "price-desc") filtered.sort((a, b) => parseFloat(b.price) - parseFloat(a.price));
+    return filtered;
+  };
+
   const inputStyle = { width: "100%", boxSizing: "border-box", padding: "11px 14px", border: "1.5px solid #e5e7eb", borderRadius: 10, fontSize: 14, fontFamily: "'DM Sans', sans-serif", background: "white" };
 
   return (
@@ -250,6 +258,13 @@ export default function ListeNaissance() {
       <div style={{ maxWidth: 720, margin: "0 auto", padding: "24px 24px 60px" }}>
         {view === "list" && (
           <div style={{ animation: "fadeIn 0.4s ease" }}>
+            <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 16 }}>
+              <select value={sortBy} onChange={e => setSortBy(e.target.value)} style={{ border: "1.5px solid #e5e7eb", borderRadius: 10, padding: "7px 12px", fontSize: 13, fontFamily: "'DM Sans', sans-serif", color: "#666", background: "white", cursor: "pointer" }}>
+                <option value="default">Ordre par défaut</option>
+                <option value="price-asc">Prix croissant ↑</option>
+                <option value="price-desc">Prix décroissant ↓</option>
+              </select>
+            </div>
             {loading ? (
               <div style={{ textAlign: "center", padding: "60px", color: "#ccc" }}>Chargement…</div>
             ) : items.length === 0 ? (
@@ -259,7 +274,7 @@ export default function ListeNaissance() {
               </div>
             ) : (
               <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-                {items.map((item, i) => (
+                {getFilteredItems().map((item, i) => (
                   <ItemCard key={item.id} item={item} index={i}
                     reserved={!!item.reservedBy}
                     onReserve={() => setReserveModal(item.id)}
@@ -286,32 +301,15 @@ export default function ListeNaissance() {
               <div>
                 <div style={{ background: "#fafafa", borderRadius: 16, padding: 24, marginBottom: 24, border: "1px solid #f3f4f6" }}>
                   <h3 style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 22, fontWeight: 600, margin: "0 0 20px" }}>Ajouter un article</h3>
-                  <input type="url" placeholder="Lien (optionnel)" value={addForm.url} onChange={e => setAddForm(f => ({ ...f, url: e.target.value }))} style={{ ...inputStyle, marginBottom: 8 }} />
                   <input type="text" placeholder="Titre *" value={addForm.title} onChange={e => setAddForm(f => ({ ...f, title: e.target.value }))} style={{ ...inputStyle, marginBottom: 8 }} />
+                  <input type="url" placeholder="Lien (optionnel)" value={addForm.url} onChange={e => setAddForm(f => ({ ...f, url: e.target.value }))} style={{ ...inputStyle, marginBottom: 8 }} />
                   <textarea placeholder="Description (optionnel)" value={addForm.description} onChange={e => setAddForm(f => ({ ...f, description: e.target.value }))} rows={2} style={{ ...inputStyle, marginBottom: 8, resize: "none" }} />
-                  <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
-                    <input type="text" placeholder="Prix (ex: 49,90 €)" value={addForm.price} onChange={e => setAddForm(f => ({ ...f, price: e.target.value }))} style={{ ...inputStyle, flex: 1 }} />
-                    <select value={addForm.category} onChange={e => setAddForm(f => ({ ...f, category: e.target.value }))} style={{ ...inputStyle, flex: 1 }}>
-                      {categories.map(c => <option key={c}>{c}</option>)}
-                    </select>
+                  <div style={{ position: "relative", marginBottom: 16 }}>
+                    <input type="number" placeholder="Prix" value={addForm.price} onChange={e => setAddForm(f => ({ ...f, price: e.target.value }))} min="0" step="0.01"
+                      style={{ ...inputStyle, paddingRight: 40 }} />
+                    <span style={{ position: "absolute", right: 14, top: "50%", transform: "translateY(-50%)", fontSize: 15, fontWeight: 600, color: "#aaa", pointerEvents: "none" }}>€</span>
                   </div>
                   <button className="btn-rose" onClick={handleAddItem} disabled={!addForm.title} style={{ width: "100%", padding: "13px", borderRadius: 10, fontSize: 15, fontWeight: 600, opacity: addForm.title ? 1 : 0.5 }}>+ Ajouter à la liste</button>
-                </div>
-
-                <div style={{ background: "#fafafa", borderRadius: 16, padding: 24, marginBottom: 24, border: "1px solid #f3f4f6" }}>
-                  <h3 style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 20, fontWeight: 600, margin: "0 0 6px" }}>🏷️ Catégories</h3>
-                  <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 14, marginTop: 14 }}>
-                    {categories.map(cat => (
-                      <div key={cat} style={{ display: "flex", alignItems: "center", gap: 4, background: "linear-gradient(135deg, #fdf2f8, #fce7f3)", border: "1.5px solid #f9a8c9", borderRadius: 100, padding: "4px 12px" }}>
-                        <span style={{ fontSize: 13, fontWeight: 600, color: "#f472a8" }}>{cat}</span>
-                        <button onClick={() => handleDeleteCategory(cat)} style={{ background: "none", border: "none", cursor: "pointer", color: "#f9a8c9", fontSize: 14, lineHeight: 1, padding: "0 0 0 4px", fontWeight: 700 }}>×</button>
-                      </div>
-                    ))}
-                  </div>
-                  <div style={{ display: "flex", gap: 8 }}>
-                    <input type="text" placeholder="Nouvelle catégorie..." value={newCategory} onChange={e => setNewCategory(e.target.value)} onKeyDown={e => e.key === "Enter" && handleAddCategory()} style={{ ...inputStyle, flex: 1 }} />
-                    <button className="btn-rose" onClick={handleAddCategory} disabled={!newCategory.trim()} style={{ padding: "11px 16px", borderRadius: 10, fontSize: 13, fontWeight: 600, opacity: newCategory.trim() ? 1 : 0.5 }}>+ Ajouter</button>
-                  </div>
                 </div>
 
                 <div style={{ background: "#fafafa", borderRadius: 16, padding: 24, marginBottom: 24, border: "1px solid #f3f4f6" }}>
@@ -366,7 +364,7 @@ function ItemCard({ item, index, reserved, onReserve, onCancel, adminUnlocked, o
             <div style={{ fontSize: 16, fontWeight: 700, color: reserved ? "#1e40af" : "#1a1a1a", marginBottom: 4, lineHeight: 1.3 }}>{item.title}</div>
             {item.description && <div style={{ fontSize: 13, color: "#888", lineHeight: 1.4, marginBottom: 6 }}>{item.description}</div>}
             <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", marginBottom: 8 }}>
-              {item.price && <span style={{ fontSize: 15, fontWeight: 700, color: reserved ? "#3b82f6" : "#f472a8" }}>{item.price}</span>}
+              {item.price && <span style={{ fontSize: 15, fontWeight: 700, color: reserved ? "#3b82f6" : "#f472a8" }}>{item.price} €</span>}
               {reserved && <span style={{ fontSize: 13, color: "#60a5fa", fontWeight: 600 }}>Pris par {item.reservedBy}</span>}
             </div>
             {item.url && (
