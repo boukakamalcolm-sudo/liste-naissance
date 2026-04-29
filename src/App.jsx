@@ -32,8 +32,6 @@ export default function ListeNaissance() {
   const [previewError, setPreviewError] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
   const [deleteConfirm, setDeleteConfirm] = useState(null);
-  const [filterCat, setFilterCat] = useState("Toutes");
-  const [filterAvail, setFilterAvail] = useState("all");
   const [sortBy, setSortBy] = useState("default");
   const [copied, setCopied] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -92,7 +90,6 @@ export default function ListeNaissance() {
   const handleDeleteCategory = async (cat) => {
     const newCats = categories.filter(c => c !== cat);
     await updateDB({ categories: newCats });
-    if (filterCat === cat) setFilterCat("Toutes");
     showSuccess("Catégorie supprimée ✓");
   };
 
@@ -162,9 +159,6 @@ export default function ListeNaissance() {
 
   const getFilteredItems = () => {
     let filtered = [...items];
-    if (filterCat !== "Toutes") filtered = filtered.filter(i => i.category === filterCat);
-    if (filterAvail === "available") filtered = filtered.filter(i => !i.reservedBy);
-    if (filterAvail === "reserved") filtered = filtered.filter(i => i.reservedBy);
     if (sortBy === "price-asc") filtered.sort((a, b) => parseFloat(a.price) - parseFloat(b.price));
     if (sortBy === "price-desc") filtered.sort((a, b) => parseFloat(b.price) - parseFloat(a.price));
     return filtered;
@@ -194,15 +188,7 @@ export default function ListeNaissance() {
         .filter-btn { border: 1.5px solid #e5e7eb; background: white; cursor: pointer; border-radius: 100px; padding: 6px 14px; font-size: 13px; font-weight: 500; transition: all 0.15s; font-family: "DM Sans", sans-serif; color: #666; }
         .filter-btn:hover { border-color: #f9a8c9; color: #f472a8; }
         .filter-btn.active { background: linear-gradient(135deg, #fdf2f8, #fce7f3); border-color: #f9a8c9; color: #f472a8; }
-        .toggle-btn { cursor: pointer; border: none; padding: 8px 16px; font-size: 13px; font-weight: 600; transition: all 0.2s; font-family: "DM Sans", sans-serif; }
-        .toggle-btn:first-child { border-radius: 10px 0 0 10px; }
-        .toggle-btn:last-child { border-radius: 0 10px 10px 0; }
-        .toggle-btn.t-all { background: #f3f4f6; color: #888; }
-        .toggle-btn.t-all.active { background: #1a1a1a; color: white; }
-        .toggle-btn.t-avail { background: #f3f4f6; color: #888; }
-        .toggle-btn.t-avail.active { background: linear-gradient(135deg, #f9a8c9, #f472a8); color: white; }
-        .toggle-btn.t-reserved { background: #f3f4f6; color: #888; }
-        .toggle-btn.t-reserved.active { background: linear-gradient(135deg, #93c5fd, #60a5fa); color: white; }
+
       `}</style>
 
       {successMessage && (
@@ -297,35 +283,12 @@ export default function ListeNaissance() {
       <div style={{ maxWidth: 720, margin: "0 auto", padding: "24px 24px 60px" }}>
         {view === "list" && (
           <div style={{ animation: "fadeIn 0.4s ease" }}>
-            <div style={{ marginBottom: 20 }}>
-              <div style={{ marginBottom: 12 }}>
-                <p style={{ fontSize: 11, color: "#aaa", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 8 }}>Catégorie</p>
-                <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                  {["Toutes", ...categories].map(cat => (
-                    <button key={cat} className={`filter-btn ${filterCat === cat ? "active" : ""}`} onClick={() => setFilterCat(cat)}>{cat}</button>
-                  ))}
-                </div>
-              </div>
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 10 }}>
-                {/* Toggle disponibilité */}
-                <div>
-                  <p style={{ fontSize: 11, color: "#aaa", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6 }}>Disponibilité</p>
-                  <div style={{ display: "flex", borderRadius: 10, overflow: "hidden", border: "1.5px solid #e5e7eb" }}>
-                    <button className={`toggle-btn t-all ${filterAvail === "all" ? "active" : ""}`} onClick={() => setFilterAvail("all")}>Tous</button>
-                    <button className={`toggle-btn t-avail ${filterAvail === "available" ? "active" : ""}`} onClick={() => setFilterAvail("available")}>💕 Disponibles</button>
-                    <button className={`toggle-btn t-reserved ${filterAvail === "reserved" ? "active" : ""}`} onClick={() => setFilterAvail("reserved")}>💙 Réservés</button>
-                  </div>
-                </div>
-                {/* Tri prix */}
-                <div>
-                  <p style={{ fontSize: 11, color: "#aaa", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6 }}>Trier par</p>
-                  <select value={sortBy} onChange={e => setSortBy(e.target.value)} style={{ border: "1.5px solid #e5e7eb", borderRadius: 10, padding: "7px 12px", fontSize: 13, fontFamily: "'DM Sans', sans-serif", color: "#666", background: "white", cursor: "pointer" }}>
-                    <option value="default">Défaut</option>
-                    <option value="price-asc">Prix ↑</option>
-                    <option value="price-desc">Prix ↓</option>
-                  </select>
-                </div>
-              </div>
+            <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 16 }}>
+              <select value={sortBy} onChange={e => setSortBy(e.target.value)} style={{ border: "1.5px solid #e5e7eb", borderRadius: 10, padding: "7px 12px", fontSize: 13, fontFamily: "'DM Sans', sans-serif", color: "#666", background: "white", cursor: "pointer" }}>
+                <option value="default">Ordre par défaut</option>
+                <option value="price-asc">Prix croissant ↑</option>
+                <option value="price-desc">Prix décroissant ↓</option>
+              </select>
             </div>
             {loading ? (
               <div style={{ textAlign: "center", padding: "60px", color: "#ccc" }}>Chargement…</div>
