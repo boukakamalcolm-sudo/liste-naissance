@@ -354,7 +354,6 @@ export default function ListeNaissance() {
 
                 <div style={{ background: "#fafafa", borderRadius: 16, padding: 24, marginBottom: 24, border: "1px solid #f3f4f6" }}>
                   <h3 style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 20, fontWeight: 600, margin: "0 0 6px" }}>🏷️ Catégories personnalisables</h3>
-                  <p style={{ fontSize: 13, color: "#aaa", margin: "0 0 14px" }}>Elles apparaissent comme filtres dans la liste publique.</p>
                   <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 14 }}>
                     {categories.map(cat => (
                       <div key={cat} style={{ display: "flex", alignItems: "center", gap: 4, background: "linear-gradient(135deg, #fdf2f8, #fce7f3)", border: "1.5px solid #f9a8c9", borderRadius: 100, padding: "4px 12px" }}>
