@@ -32,6 +32,7 @@ export default function ListeNaissance() {
   const [copied, setCopied] = useState(false);
   const [sortBy, setSortBy] = useState("default");
   const [loading, setLoading] = useState(true);
+  const [celebration, setCelebration] = useState(null);
 
   useEffect(() => {
     const unsub = onSnapshot(DB_REF(), (snap) => {
@@ -109,9 +110,11 @@ export default function ListeNaissance() {
 
   const handleReserve = async () => {
     if (!reserveName.trim()) return;
-    await saveItems(items.map(item => item.id === reserveModal ? { ...item, reservedBy: reserveName.trim() } : item));
+    const name = reserveName.trim();
+    await saveItems(items.map(item => item.id === reserveModal ? { ...item, reservedBy: name } : item));
     setReserveModal(null); setReserveName("");
-    showSuccess("Réservé ✓");
+    setCelebration(name);
+    setTimeout(() => setCelebration(null), 4000);
   };
 
   const handleCancelAttempt = async () => {
@@ -165,7 +168,47 @@ export default function ListeNaissance() {
         .btn-blue { background: linear-gradient(135deg, #93c5fd, #60a5fa); color: white; border: none; cursor: pointer; transition: all 0.2s; }
         .btn-blue:hover { opacity: 0.88; transform: scale(1.02); }
         input:focus, textarea:focus, select:focus { outline: none !important; border-color: #f9a8c9 !important; box-shadow: 0 0 0 3px rgba(249,168,201,0.2) !important; }
+        @keyframes confettiFall { 0% { transform: translateY(0) rotate(0deg); opacity: 1; } 100% { transform: translateY(100vh) rotate(720deg); opacity: 0; } }
+        @keyframes celebrationPop { 0% { opacity: 0; transform: scale(0.5); } 100% { opacity: 1; transform: scale(1); } }
       `}</style>
+
+      {celebration && (
+        <div style={{
+          position: "fixed", inset: 0, zIndex: 200,
+          display: "flex", alignItems: "center", justifyContent: "center",
+          pointerEvents: "none",
+        }}>
+          {/* Confetti */}
+          {[...Array(40)].map((_, i) => (
+            <div key={i} style={{
+              position: "absolute",
+              left: `${Math.random() * 100}%`,
+              top: `-10px`,
+              width: `${6 + Math.random() * 8}px`,
+              height: `${6 + Math.random() * 8}px`,
+              borderRadius: Math.random() > 0.5 ? "50%" : "2px",
+              background: ["#f472a8","#a78bfa","#60a5fa","#34d399","#fbbf24","#f9a8c9","#818cf8"][Math.floor(Math.random() * 7)],
+              animation: `confettiFall ${1.5 + Math.random() * 2.5}s ease-in ${Math.random() * 0.8}s forwards`,
+              transform: `rotate(${Math.random() * 360}deg)`,
+            }} />
+          ))}
+          {/* Message */}
+          <div style={{
+            background: "white",
+            borderRadius: 24,
+            padding: "28px 40px",
+            boxShadow: "0 20px 60px rgba(0,0,0,0.2)",
+            textAlign: "center",
+            animation: "celebrationPop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards",
+          }}>
+            <div style={{ fontSize: 48, marginBottom: 8 }}>🥳</div>
+            <div style={{ fontSize: 22, fontWeight: 700, color: "#1a1a1a", fontFamily: "'Cormorant Garamond', serif" }}>
+              MERCI {celebration.toUpperCase()} !
+            </div>
+            <div style={{ fontSize: 28, marginTop: 6 }}>💙</div>
+          </div>
+        </div>
+      )}
 
       {successMessage && (
         <div style={{ position: "fixed", top: 24, left: "50%", transform: "translateX(-50%)", background: "#1a1a1a", color: "white", padding: "12px 24px", borderRadius: 100, fontSize: 14, zIndex: 1000, animation: "slideDown 0.3s ease", boxShadow: "0 4px 20px rgba(0,0,0,0.15)", whiteSpace: "nowrap" }}>{successMessage}</div>
