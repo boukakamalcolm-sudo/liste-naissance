@@ -216,8 +216,11 @@ export default function ListeNaissance() {
         </div>
       )}
 
-      <div style={{ position: "relative", width: "100%", maxHeight: 300, overflow: "hidden" }}>
-        <img src={`data:image/jpeg;base64,${HERO_B64}`} alt="Cécilia et Nicolas" style={{ width: "100%", objectFit: "cover", objectPosition: "center center", display: "block", maxHeight: 300 }} />
+      <div style={{
+        width: "100%", height: 180,
+        background: "linear-gradient(135deg, #a78bfa 0%, #ec4899 50%, #f9a8c9 100%)",
+        position: "relative",
+      }}>
         <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: "60%", background: "linear-gradient(to bottom, transparent, white)" }} />
       </div>
 
